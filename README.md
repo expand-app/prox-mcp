@@ -40,6 +40,7 @@ This is a [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server
 The server requires the following environment variables. You can set them in a `.env` file (see `.env.example`) or pass them when running the server.
 
 - `ORG_API_KEY`: Your Organization API Key.
+- `PROX_ACCOUNT_ID`: The user id in prox. This is used globally for all LinkedIn operations.
 - `API_BASE_URL`: The base URL for the Prox API (default: `https://api.prox.com`).
 
 ## Usage
@@ -56,6 +57,7 @@ Add the following configuration to your MCP client (e.g., Claude Desktop, Trae, 
       "args": ["/absolute/path/to/prox-mcp/build/index.js"],
       "env": {
         "ORG_API_KEY": "<YOUR_ORG_API_KEY>",
+        "PROX_ACCOUNT_ID": "<YOUR_PROX_ACCOUNT_ID>",
         "API_BASE_URL": "<API_BASE_URL>"
       }
     }
