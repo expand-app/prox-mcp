@@ -12,9 +12,15 @@ dotenv.config();
 
 const API_KEY = process.env.ORG_API_KEY;
 const API_BASE_URL = process.env.API_BASE_URL || "https://api.prox.com"; // Placeholder
+const PROX_ACCOUNT_ID = process.env.PROX_ACCOUNT_ID;
 
 if (!API_KEY) {
   console.error("Error: ORG_API_KEY environment variable is required");
+  process.exit(1);
+}
+
+if (!PROX_ACCOUNT_ID) {
+  console.error("Error: PROX_ACCOUNT_ID environment variable is required");
   process.exit(1);
 }
 
@@ -39,13 +45,7 @@ const TOOLS = [
     description: "Get 'Me' Profile (Fetch & Update)",
     inputSchema: {
       type: "object",
-      properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
-      },
-      required: ["account_id"],
+      properties: {},
     },
   },
   {
@@ -54,16 +54,12 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
         profile_id: {
           type: "string",
           description: "The hash id or public id in linkedin",
         },
       },
-      required: ["account_id", "profile_id"],
+      required: ["profile_id"],
     },
   },
   {
@@ -72,14 +68,9 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
         count: { type: "integer", default: 25 },
         start: { type: "integer", default: 0 },
       },
-      required: ["account_id"],
     },
   },
   {
@@ -88,17 +79,13 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
         hash_id: {
           type: "string",
           description: "The hash id in linkedin, which should start with `ACo`",
         },
         message: { type: "string" },
       },
-      required: ["account_id", "hash_id"],
+      required: ["hash_id"],
     },
   },
   {
@@ -107,10 +94,6 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
         hash_id: {
           type: "string",
           description: "The hash id in linkedin, which should start with `ACo`",
@@ -118,7 +101,6 @@ const TOOLS = [
         count: { type: "integer", default: 20 },
         last_activity_at: { type: "integer" },
       },
-      required: ["account_id"],
     },
   },
   {
@@ -127,10 +109,6 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
         conversation_id: { type: "string" },
         hash_id: {
           type: "string",
@@ -140,7 +118,7 @@ const TOOLS = [
         delivered_at: { type: "integer" },
         prev_cursor: { type: "string" },
       },
-      required: ["account_id", "conversation_id"],
+      required: ["conversation_id"],
     },
   },
   {
@@ -149,16 +127,12 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
         other_hash_id: {
           type: "string",
           description: "The hash id in linkedin, which should start with `ACo`",
         },
       },
-      required: ["account_id", "other_hash_id"],
+      required: ["other_hash_id"],
     },
   },
   {
@@ -167,10 +141,6 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
         conversation_id: { type: "string" },
         receiver_hash_id: {
           type: "string",
@@ -178,7 +148,7 @@ const TOOLS = [
         },
         text: { type: "string" },
       },
-      required: ["account_id", "text"],
+      required: ["text"],
     },
   },
   {
@@ -187,13 +157,9 @@ const TOOLS = [
     inputSchema: {
       type: "object",
       properties: {
-        account_id: {
-          type: "string",
-          description: "The user id in prox",
-        },
         url: { type: "string" },
       },
-      required: ["account_id", "url"],
+      required: ["url"],
     },
   },
 ];
@@ -211,21 +177,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       // LinkedIn Operations
       case "get_linkedin_me": {
-        const { account_id } = args as { account_id: string };
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(
-                await apiClient.get(`/v1/accounts/${account_id}/linkedin/me`),
+                await apiClient.get(`/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/me`),
               ),
             },
           ],
         };
       }
       case "get_linkedin_profile": {
-        const { account_id, profile_id } = args as {
-          account_id: string;
+        const { profile_id } = (args || {}) as {
           profile_id: string;
         };
         return {
@@ -234,7 +198,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: "text",
               text: JSON.stringify(
                 await apiClient.get(
-                  `/v1/accounts/${account_id}/linkedin/profile`,
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/profile`,
                   { profile_id },
                 ),
               ),
@@ -243,14 +207,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
       case "get_linkedin_connections": {
-        const { account_id, ...rest } = args as { account_id: string };
+        const rest = args || {};
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(
                 await apiClient.get(
-                  `/v1/accounts/${account_id}/linkedin/connections`,
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/connections`,
                   rest,
                 ),
               ),
@@ -259,14 +223,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
       case "send_linkedin_invite": {
-        const { account_id, ...rest } = args as { account_id: string };
+        const rest = args || {};
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(
                 await apiClient.post(
-                  `/v1/accounts/${account_id}/linkedin/invite`,
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/invite`,
                   rest,
                 ),
               ),
@@ -275,14 +239,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
       case "get_linkedin_conversations": {
-        const { account_id, ...rest } = args as { account_id: string };
+        const rest = args || {};
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(
                 await apiClient.get(
-                  `/v1/accounts/${account_id}/linkedin/conversations`,
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/conversations`,
                   rest,
                 ),
               ),
@@ -291,8 +255,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
       case "get_linkedin_conversation_messages": {
-        const { account_id, conversation_id, ...rest } = args as {
-          account_id: string;
+        const { conversation_id, ...rest } = (args || {}) as {
           conversation_id: string;
         };
         return {
@@ -301,7 +264,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: "text",
               text: JSON.stringify(
                 await apiClient.get(
-                  `/v1/accounts/${account_id}/linkedin/conversations/${conversation_id}/messages`,
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/conversations/${conversation_id}/messages`,
                   rest,
                 ),
               ),
@@ -310,8 +273,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
       case "get_linkedin_conversation_with": {
-        const { account_id, other_hash_id } = args as {
-          account_id: string;
+        const { other_hash_id } = (args || {}) as {
           other_hash_id: string;
         };
         return {
@@ -320,7 +282,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               type: "text",
               text: JSON.stringify(
                 await apiClient.get(
-                  `/v1/accounts/${account_id}/linkedin/conversations/with/${other_hash_id}`,
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/conversations/with/${other_hash_id}`,
                 ),
               ),
             },
@@ -328,14 +290,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
       case "send_linkedin_message": {
-        const { account_id, ...rest } = args as { account_id: string };
+        const rest = args || {};
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(
                 await apiClient.post(
-                  `/v1/accounts/${account_id}/linkedin/message`,
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/message`,
                   rest,
                 ),
               ),
@@ -344,14 +306,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
       case "download_file_from_linkedin": {
-        const { account_id, url } = args as { account_id: string; url: string };
+        const { url } = (args || {}) as { url: string };
         return {
           content: [
             {
               type: "text",
               text: JSON.stringify(
                 await apiClient.post(
-                  `/v1/accounts/${account_id}/linkedin/download-file`,
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/download-file`,
                   { url },
                 ),
               ),
