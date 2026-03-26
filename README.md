@@ -41,7 +41,7 @@ The server requires the following environment variables. You can set them in a `
 
 - `ORG_API_KEY`: Your Organization API Key.
 - `PROX_ACCOUNT_ID`: The user id in prox. This is used globally for all LinkedIn operations.
-- `API_BASE_URL`: The base URL for the Prox API (default: `https://api.prox.com`).
+- `API_BASE_URL`: The base URL for the Prox API (default: `https://api.prox.ist`).
 
 ## Usage
 

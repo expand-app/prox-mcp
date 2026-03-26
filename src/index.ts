@@ -11,7 +11,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const API_KEY = process.env.ORG_API_KEY;
-const API_BASE_URL = process.env.API_BASE_URL || "https://api.prox.com"; // Placeholder
+const API_BASE_URL = process.env.API_BASE_URL || "https://api.prox.ist"; // Placeholder
 const PROX_ACCOUNT_ID = process.env.PROX_ACCOUNT_ID;
 
 if (!API_KEY) {
@@ -70,6 +70,208 @@ const TOOLS = [
       properties: {
         count: { type: "integer", default: 25 },
         start: { type: "integer", default: 0 },
+      },
+    },
+  },
+  {
+    name: "search_linkedin_people_free_text",
+    description:
+      "Search LinkedIn People with free-text filters. All parameters are optional.",
+    inputSchema: {
+      type: "object",
+      description: "All fields are optional. Omit any filters you do not need.",
+      properties: {
+        keywords: {
+          type: "string",
+          description: "Main people-search keywords",
+        },
+        locationName: {
+          type: "string",
+          description: "Free-text location name",
+        },
+        currentCompanyName: {
+          type: "string",
+          description: "Free-text current company name",
+        },
+        pastCompanyName: {
+          type: "string",
+          description: "Free-text past company name",
+        },
+        industryName: {
+          type: "string",
+          description: "Free-text industry name",
+        },
+        network: {
+          type: "string",
+          description: "F=1st-degree, S=2nd-degree, O=others",
+        },
+        connectionOf: {
+          type: "string",
+          description:
+            "LinkedIn profile hash ID to search within their connections",
+        },
+        followerOf: {
+          type: "string",
+          description:
+            "LinkedIn profile hash ID to search within their followers",
+        },
+        openToVolunteer: {
+          type: "boolean",
+          description: "Filter people open to volunteer opportunities",
+        },
+        profileLanguage: {
+          type: "string",
+          description: "Profile language code such as en, es, or zh",
+        },
+        schoolName: {
+          type: "string",
+          description: "Free-text school name",
+        },
+        serviceCategoryName: {
+          type: "string",
+          description: "Free-text service category or skill name",
+        },
+        firstName: {
+          type: "string",
+          description: "Person first name",
+        },
+        lastName: {
+          type: "string",
+          description: "Person last name",
+        },
+        title: {
+          type: "string",
+          description: "Job title of the people being searched",
+        },
+        company: {
+          type: "string",
+          description: "Free-text company filter",
+        },
+        school: {
+          type: "string",
+          description: "Free-text school filter",
+        },
+        start: {
+          type: "integer",
+          default: 0,
+          description: "Pagination offset",
+        },
+      },
+    },
+  },
+  {
+    name: "search_linkedin_jobs_free_text",
+    description:
+      "Search LinkedIn Jobs with free-text filters. All parameters are optional.",
+    inputSchema: {
+      type: "object",
+      description: "All fields are optional. Omit any filters you do not need.",
+      properties: {
+        keywords: {
+          type: "string",
+          description: "Main job-search keywords",
+        },
+        locationName: {
+          type: "string",
+          description: "Free-text location name",
+        },
+        companyName: {
+          type: "string",
+          description: "Free-text company name",
+        },
+        timePostedRange: {
+          type: "string",
+          description: "Relative time filter such as 1d, 1w, 1mo, or 3mo",
+        },
+        jobType: {
+          type: "string",
+          description:
+            "Job type filter: F=full time, P=part time, C=contract, T=temporary, V=volunteer, I=internship, O=other",
+        },
+        sortBy: {
+          type: "string",
+          default: "R",
+          description: "Sort order: DD=most recent, R=relevance",
+        },
+        applyWithLinkedIn: {
+          type: "boolean",
+          description: "Restrict to Easy Apply / Apply with LinkedIn jobs",
+        },
+        commitment: {
+          type: "integer",
+          description:
+            "Company commitment filter: 1=DEI, 2=sustainability, 3=work-life balance, 4=social impact, 5=career growth",
+        },
+        distance: {
+          type: "integer",
+          description: "Distance in miles",
+        },
+        expLevel: {
+          type: "integer",
+          description:
+            "Experience level: 1=internship, 2=entry, 3=associate, 4=mid-senior, 5=director, 6=executive",
+        },
+        earlyApplicant: {
+          type: "boolean",
+          description: "Restrict to jobs where you are an early applicant",
+        },
+        functionName: {
+          type: "string",
+          description: "Free-text job function name",
+        },
+        industryName: {
+          type: "string",
+          description: "Free-text industry name",
+        },
+        inYourNetwork: {
+          type: "boolean",
+          description: "Restrict to jobs in your network",
+        },
+        populatedPlaceName: {
+          type: "string",
+          description: "Free-text populated place name",
+        },
+        salaryBucketV2: {
+          type: "string",
+          description:
+            "Salary bucket: 1=$40k+, 2=$60k+, 3=$80k+, 4=$100k+, 5=$120k+, 6=$140k+, 7=$160k+, 8=$180k+, 9=$200k+",
+        },
+        titleName: {
+          type: "string",
+          description: "Free-text job title name",
+        },
+        workplaceType: {
+          type: "integer",
+          description: "Workplace type: 1=onsite, 2=remote, 3=hybrid",
+        },
+        start: {
+          type: "integer",
+          default: 0,
+          description: "Pagination offset",
+        },
+        count: {
+          type: "integer",
+          default: 25,
+          description: "Number of results to request",
+        },
+        decorationId: {
+          type: "string",
+          description: "LinkedIn jobs decoration ID",
+        },
+        jobDetailsCount: {
+          type: "integer",
+          description: "Number of jobs to fetch detailed data for",
+        },
+        jobPostingDetailDescriptionStart: {
+          type: "integer",
+          default: 0,
+          description: "Description pagination start for job details",
+        },
+        jobPostingDetailDescriptionCount: {
+          type: "integer",
+          default: 5,
+          description: "Description pagination count for job details",
+        },
       },
     },
   },
@@ -182,7 +384,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             {
               type: "text",
               text: JSON.stringify(
-                await apiClient.get(`/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/me`),
+                await apiClient.get(
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/me`,
+                ),
               ),
             },
           ],
@@ -247,6 +451,38 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 await apiClient.get(
                   `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/conversations`,
+                  rest,
+                ),
+              ),
+            },
+          ],
+        };
+      }
+      case "search_linkedin_people_free_text": {
+        const rest = args || {};
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                await apiClient.get(
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/search-people-free-text`,
+                  rest,
+                ),
+              ),
+            },
+          ],
+        };
+      }
+      case "search_linkedin_jobs_free_text": {
+        const rest = args || {};
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                await apiClient.get(
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/search-jobs-free-text`,
                   rest,
                 ),
               ),
