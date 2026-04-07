@@ -25,15 +25,16 @@ X-Api-Key: <YOUR_ORG_API_KEY>
 
 ### Task Management
 
-| Method | Endpoint                                       | Description             |
-| :----- | :--------------------------------------------- | :---------------------- |
-| `GET`  | `/v1/tasks/<task_id>`                          | Get Task Details        |
-| `POST` | `/v1/tasks/<task_id>:cancel`                   | Cancel Task             |
-| `POST` | `/v1/tasks/<task_id>/2fa/code`                 | Submit 2FA Code         |
-| `GET`  | `/v1/accounts/<account_id>/tasks`              | List Tasks for Account  |
-| `POST` | `/v1/accounts/<account_id>/tasks/login`        | Start Login Task        |
-| `GET`  | `/v1/accounts/<account_id>/tasks/login`        | Get Latest Login Task   |
-| `POST` | `/v1/accounts/<account_id>/tasks/health-check` | Start Health Check Task |
+| Method | Endpoint                                           | Description                 |
+| :----- | :------------------------------------------------- | :-------------------------- |
+| `GET`  | `/v1/tasks/<task_id>`                              | Get Task Details            |
+| `POST` | `/v1/tasks/<task_id>:cancel`                       | Cancel Task                 |
+| `POST` | `/v1/tasks/<task_id>/2fa/code`                     | Submit 2FA Code             |
+| `GET`  | `/v1/accounts/<account_id>/tasks`                  | List Tasks for Account      |
+| `POST` | `/v1/accounts/<account_id>/tasks/login`            | Start Login Task            |
+| `GET`  | `/v1/accounts/<account_id>/tasks/login`            | Get Latest Login Task       |
+| `POST` | `/v1/accounts/<account_id>/tasks/health-check`     | Start Health Check Task     |
+| `POST` | `/v1/accounts/<account_id>/tasks/recruiter-switch` | Start Recruiter Switch Task |
 
 ### LinkedIn Operations
 
@@ -53,6 +54,20 @@ X-Api-Key: <YOUR_ORG_API_KEY>
 | `POST` | `/v1/accounts/<account_id>/linkedin/message`                                  | Send LinkedIn Message                         |
 | `POST` | `/v1/accounts/<account_id>/linkedin/upload-messaging-attachment`              | Upload Attachment and Send Message            |
 | `POST` | `/v1/accounts/<account_id>/linkedin/download-file`                            | Download File from LinkedIn (via URL)         |
+
+### LinkedIn Recruiter Lite Operations
+
+| Method | Endpoint                                                               | Description                                    |
+| :----- | :--------------------------------------------------------------------- | :--------------------------------------------- |
+| `GET`  | `/v1/accounts/<account_id>/linkedin-recruiter/company-typeahead`       | Recruiter Company Typeahead                    |
+| `GET`  | `/v1/accounts/<account_id>/linkedin-recruiter/industry-typeahead`      | Recruiter Industry Typeahead                   |
+| `GET`  | `/v1/accounts/<account_id>/linkedin-recruiter/job-title-typeahead`     | Recruiter Job Title (Occupation) Typeahead     |
+| `GET`  | `/v1/accounts/<account_id>/linkedin-recruiter/location-typeahead`      | Recruiter Location Typeahead                   |
+| `GET`  | `/v1/accounts/<account_id>/linkedin-recruiter/school-typeahead`        | Recruiter School Typeahead                     |
+| `GET`  | `/v1/accounts/<account_id>/linkedin-recruiter/skill-typeahead`         | Recruiter Skill Typeahead                      |
+| `GET`  | `/v1/accounts/<account_id>/linkedin-recruiter/zip-typeahead`           | Recruiter ZIP Typeahead                        |
+| `POST` | `/v1/accounts/<account_id>/linkedin-recruiter/search-people`           | Recruiter Search People (ID-based filters)     |
+| `POST` | `/v1/accounts/<account_id>/linkedin-recruiter/search-people-free-text` | Recruiter Search People with Free-Text Filters |
 
 ### SSE (Server-Sent Events)
 
@@ -353,6 +368,29 @@ No parameters required.
 - `201 Created` when a new health-check task is created.
 - `200 OK` when returning an existing/skipped task (for example idempotency hit or live-task skip).
 - Body: `{ "data": { "task": { ...Task Object... } } }`
+- `409 Conflict` with `error.code = "task_conflict"` when concurrent task creation conflicts.
+
+#### `POST /v1/accounts/<account_id>/tasks/recruiter-switch` (Start Recruiter Switch)
+
+Body Parameters (JSON):
+
+No parameters required.
+
+**Path Parameters:**
+
+- `account_id`: string (required) - Account identifier.
+
+**Usage:**
+
+- Switches the LinkedIn account into a Recruiter Lite contract so subsequent `linkedin-recruiter/*` calls can run.
+- Account `abs` must be `VALID` (i.e. logged in) before calling this endpoint.
+
+**Response Details:**
+
+- `201 Created` when a new recruiter-switch task is created.
+- `200 OK` when returning an existing/skipped task (idempotency hit, live-task skip).
+- Body: `{ "data": { "task": { ...Task Object... } } }`
+- `400 Bad Request` with `error.code = "account_not_valid"` if the account is not in a logged-in state.
 - `409 Conflict` with `error.code = "task_conflict"` when concurrent task creation conflicts.
 
 #### `GET /v1/accounts/<account_id>/tasks/login` (Get Latest Login Task)
@@ -665,6 +703,236 @@ No parameters required.
 **Body Parameters (JSON):**
 
 - `url`: string (required) - The file URL to download.
+
+### LinkedIn Recruiter Lite Operations
+
+These endpoints require the account to be switched into a LinkedIn Recruiter Lite contract first (see `POST /v1/accounts/<account_id>/tasks/recruiter-switch`). All endpoints validate that the account `abs` is `VALID` and return `423 Locked` with `error.code = "account_abs_not_valid"` otherwise.
+
+#### Recruiter Typeahead Endpoints
+
+The seven typeahead endpoints below share the same shape:
+
+**Common Query Parameters:**
+
+- `keyword`: string (required) - Search keyword.
+- `return_original`: boolean (optional, default: false) - If true, returns the raw upstream response body.
+
+**Common Response:**
+
+- `200 OK` on success.
+- Body: `{ "data": [ ...typed entries... ] }` (see per-endpoint fields below).
+- `400 Bad Request` with `error.code = "missing_param"` when `keyword` is absent.
+- `424 Failed Dependency` with `error.code = "upstream_error"` when LinkedIn returns a non-200 status.
+
+##### `GET /v1/accounts/<account_id>/linkedin-recruiter/company-typeahead`
+
+Returns Recruiter company suggestions. Each entry: `{ title, company_id, company_url, company_logo_url, ... }`.
+
+##### `GET /v1/accounts/<account_id>/linkedin-recruiter/industry-typeahead`
+
+Returns Recruiter industry suggestions. Each entry: `{ title, industry_id }`.
+
+##### `GET /v1/accounts/<account_id>/linkedin-recruiter/job-title-typeahead`
+
+Returns Recruiter occupation/job title suggestions. Each entry: `{ title, title_id }`. The `title_id` value feeds the `occupations[].title_id` field of the people-search body.
+
+##### `GET /v1/accounts/<account_id>/linkedin-recruiter/location-typeahead`
+
+Returns Recruiter geo location suggestions. Each entry: `{ title, display_name, location_id }`. The `location_id` is the `geo_id` used in the search body's `locations[]`.
+
+##### `GET /v1/accounts/<account_id>/linkedin-recruiter/school-typeahead`
+
+Returns Recruiter school suggestions. Each entry: `{ name, school_id, organization_id }`. Note: the recruiter people-search facet expects the `organization_id` value (passed as `school_id` in the search body), not the typeahead `school_id`.
+
+##### `GET /v1/accounts/<account_id>/linkedin-recruiter/skill-typeahead`
+
+Returns Recruiter skill suggestions. Each entry: `{ name, skill_id }`.
+
+##### `GET /v1/accounts/<account_id>/linkedin-recruiter/zip-typeahead`
+
+Returns Recruiter ZIP/postal location suggestions. Shares the location parser; each entry: `{ title, display_name, location_id }`.
+
+#### Recruiter Search People — Shared Response Shape
+
+Both `search-people` and `search-people-free-text` return the same parsed envelope:
+
+```json
+{
+  "data": {
+    "paging": { "start": 0, "count": 25, "total": 1234 },
+    "total": 1234,
+    "formatted_total": "1,234",
+    "highlight_terms": ["..."],
+    "facets": [ { "type": "...", "name": "...", "values": [...] } ],
+    "query_summary": [ { "type": "...", "label": "..." } ],
+    "candidates": [ { ...Candidate Object... } ]
+  }
+}
+```
+
+**Candidate Object Fields (`candidates[]`):**
+
+| Field                | Type          | Description                                           |
+| :------------------- | :------------ | :---------------------------------------------------- |
+| `hit_urn`            | string\|null  | Recruiter search hit URN                              |
+| `profile_urn`        | string\|null  | Member profile URN                                    |
+| `t_hash_id`          | string\|null  | Recruiter `t_` hash ID extracted from the profile URN |
+| `public_id`          | string\|null  | LinkedIn public profile identifier                    |
+| `member_id`          | integer\|null | LinkedIn member ID                                    |
+| `anonymized`         | boolean\|null | Whether LinkedIn anonymized the candidate             |
+| `first_name`         | string\|null  | First name (or unobfuscated when available)           |
+| `last_name`          | string\|null  | Last name (or unobfuscated when available)            |
+| `headline`           | string\|null  | Profile headline                                      |
+| `industry`           | string\|null  | Industry name                                         |
+| `location`           | string\|null  | Resolved location display name                        |
+| `public_profile_url` | string\|null  | Canonical LinkedIn profile URL                        |
+| `profile_picture`    | string\|null  | Best profile picture URL when available               |
+| `num_connections`    | integer\|null | Connection count                                      |
+| `network_distance`   | string\|null  | Connection distance label                             |
+| `open_to_work`       | boolean\|null | Whether the member is open to new opportunities       |
+| `can_send_inmail`    | boolean\|null | Whether you can InMail the member                     |
+| `has_verifications`  | boolean\|null | Whether LinkedIn has profile verifications            |
+| `top_features`       | array         | Top "interested in" feature groups                    |
+| `current_positions`  | array         | Parsed current positions                              |
+| `work_experience`    | array         | Parsed work experience entries                        |
+| `educations`         | array         | Parsed education entries                              |
+| `insights`           | object        | Parsed insights payload                               |
+| `recruiting`         | object        | Parsed recruiting metadata                            |
+
+If `return_original=true` is supplied as a query parameter, the raw upstream LinkedIn response body is returned instead of the parsed envelope.
+
+#### `POST /v1/accounts/<account_id>/linkedin-recruiter/search-people` (Recruiter Search People)
+
+**Query Parameters:**
+
+- `return_original`: boolean (optional, default: false) - If true, returns the raw LinkedIn response body.
+
+**Body Parameters (JSON):**
+
+- `titles`: array (optional) - List of `{ name, title_id }` entries. Resolve `title_id` via `linkedin-recruiter/job-title-typeahead`. Forwarded to LinkedIn as `query.occupations[]` (matched against LinkedIn's standardized title taxonomy).
+- `start`: integer (optional, default: 0) - Pagination offset.
+- `keywords`: string (optional) - Free-text keyword filter.
+- `first_names`: array of strings (optional)
+- `last_names`: array of strings (optional)
+- `skills`: array of `{ name, skill_id }` (optional) - Resolve via `skill-typeahead`.
+- `companies`: array of `{ name, company_id }` (optional) - Resolve via `company-typeahead`.
+- `current_companies`: array of `{ name, company_id }` (optional)
+- `past_companies`: array of `{ name, company_id }` (optional)
+- `schools`: array of `{ name, school_id }` (optional) - `school_id` is the typeahead `organization_id`.
+- `graduation_years`: object (optional) - `{ "min": int, "max": int }`; either bound is optional.
+- `industries`: array of `{ name, industry_id }` (optional) - Resolve via `industry-typeahead`.
+- `seniorities`: array of `{ name, seniority_id }` (optional) - `seniority_id` is an integer (`1=Unpaid`, `2=Training`, `3=Entry`, `4=Senior`, `5=Manager`, `6=Director`, `7=VP`, `8=CXO`, `9=Partner`, `10=Owner`).
+- `company_sizes`: array of `{ name, size_id }` (optional) - `size_id` is a single-letter code (`A=Self-employed`, `B=1-10`, `C=11-50`, `D=51-200`, `E=201-500`, `F=501-1000`, `G=1001-5000`, `H=5001-10,000`, `I=10,000+`).
+- `job_functions`: array of `{ name, function_id }` (optional) - `function_id` is an integer. Allowed values: `1=Accounting`, `2=Administrative`, `3=Arts and Design`, `4=Business Development`, `5=Community and Social Services`, `6=Consulting`, `7=Education`, `8=Engineering`, `9=Entrepreneurship`, `10=Finance`, `11=Healthcare Services`, `12=Human Resources`, `13=Information Technology`, `14=Legal`, `15=Marketing`, `16=Media and Communication`, `17=Military and Protective Services`, `18=Operations`, `19=Product Management`, `20=Program and Project Management`, `21=Purchasing`, `22=Quality Assurance`, `23=Real Estate`, `24=Research`, `25=Sales`, `26=Customer Success and Support`.
+- `networks`: array of `{ name, network_id }` (optional) - `network_id` is a single-letter code (`F=1st Connections`, `S=2nd Connections`, `A=Group Members`, `O=3rd + Everyone Else`).
+- `yoe`: object (optional) - `{ "min": int, "max": int }` years-of-experience bounds; either is optional.
+- `locations`: array of `{ name, geo_id }` (optional) - `geo_id` is the `location_id` from the location typeahead. Optional `scope` defaults to `"CURRENT"`.
+- `bing_postal_codes`: array of strings (optional) - Postal codes resolved via `zip-typeahead`.
+
+**Example Body:**
+
+```json
+{
+  "titles": [{ "name": "Software Engineer", "title_id": 9 }],
+  "start": 0,
+  "keywords": "python distributed systems",
+  "first_names": ["Jane"],
+  "last_names": ["Doe"],
+  "skills": [{ "name": "Kubernetes", "skill_id": "1234" }],
+  "companies": [{ "name": "Acme", "company_id": "1441" }],
+  "current_companies": [{ "name": "Acme", "company_id": "1441" }],
+  "past_companies": [{ "name": "Globex", "company_id": "1442" }],
+  "schools": [{ "name": "MIT", "school_id": "1234" }],
+  "graduation_years": { "min": 2010, "max": 2015 },
+  "industries": [{ "name": "Software Development", "industry_id": "4" }],
+  "seniorities": [{ "name": "Senior", "seniority_id": 4 }],
+  "company_sizes": [{ "name": "51-200", "size_id": "D" }],
+  "job_functions": [{ "name": "Engineering", "function_id": 8 }],
+  "networks": [{ "name": "2nd Connections", "network_id": "S" }],
+  "yoe": { "min": 3, "max": 10 },
+  "locations": [{ "name": "San Francisco Bay Area", "geo_id": "90000084" }],
+  "bing_postal_codes": ["94105"]
+}
+```
+
+**Response Details:**
+
+- `200 OK` on success. Body: `{ "data": { ...Search Envelope... } }` (see "Recruiter Search People — Shared Response Shape" above).
+- `400 Bad Request` with `error.code = "validation_error"` when any filter has the wrong shape.
+- `423 Locked` with `error.code = "account_abs_not_valid"` when the account is not ready.
+- `424 Failed Dependency` with `error.code = "upstream_error"` when LinkedIn rejects the search.
+- `429 Too Many Requests` with `error.code = "recruiter_search_in_progress"` and a `Retry-After` header when another recruiter people-search is already running for this account. Only one recruiter people-search runs at a time per account, across all server processes.
+
+#### `POST /v1/accounts/<account_id>/linkedin-recruiter/search-people-free-text` (Recruiter Search People, Free-Text)
+
+Same response envelope as `search-people`, but the most common filters can be supplied as plain strings — the endpoint resolves them to IDs server-side via the corresponding typeahead before running the search.
+
+**Query Parameters:**
+
+- `return_original`: boolean (optional, default: false) - If true, returns the raw LinkedIn response body.
+
+**Body Parameters (JSON):**
+
+- `titles`: array of strings (optional) - Free-text job title names, resolved via `job-title-typeahead`. Forwarded to LinkedIn as `query.occupations[]`.
+- `start`: integer (optional, default: 0) - Pagination offset.
+- `keywords`: string (optional)
+- `first_names`: array of strings (optional)
+- `last_names`: array of strings (optional)
+- `skills`: array of strings (optional) - Free-text skill names, resolved via `skill-typeahead`.
+- `companies`: array of strings (optional) - Free-text company names, resolved via `company-typeahead`.
+- `current_companies`: array of strings (optional) - Free-text company names, resolved via `company-typeahead`.
+- `past_companies`: array of strings (optional) - Free-text company names, resolved via `company-typeahead`.
+- `locations`: array of strings (optional) - Free-text location names, resolved via `location-typeahead`.
+- `schools`: array of strings (optional) - Free-text school names, resolved via `school-typeahead` (uses `organization_id`).
+- `industries`: array of strings (optional) - Free-text industry names, resolved via `industry-typeahead`.
+- `graduation_years`: object (optional) - `{ "min": int, "max": int }`.
+- `company_sizes`: array of strings (optional) - Each value must be one of the single-letter codes: `A=Self-employed`, `B=1-10`, `C=11-50`, `D=51-200`, `E=201-500`, `F=501-1000`, `G=1001-5000`, `H=5001-10,000`, `I=10,000+`.
+- `job_functions`: array of integers (optional) - Each value must be a valid `function_id`. Allowed values: `1=Accounting`, `2=Administrative`, `3=Arts and Design`, `4=Business Development`, `5=Community and Social Services`, `6=Consulting`, `7=Education`, `8=Engineering`, `9=Entrepreneurship`, `10=Finance`, `11=Healthcare Services`, `12=Human Resources`, `13=Information Technology`, `14=Legal`, `15=Marketing`, `16=Media and Communication`, `17=Military and Protective Services`, `18=Operations`, `19=Product Management`, `20=Program and Project Management`, `21=Purchasing`, `22=Quality Assurance`, `23=Real Estate`, `24=Research`, `25=Sales`, `26=Customer Success and Support`.
+- `seniorities`: array of integers (optional) - Each value must be a valid `seniority_id`. Allowed values: `1=Unpaid`, `2=Training`, `3=Entry`, `4=Senior`, `5=Manager`, `6=Director`, `7=VP`, `8=CXO`, `9=Partner`, `10=Owner`.
+- `networks`: array of strings (optional) - Each value must be one of the single-letter codes: `F=1st Connections`, `S=2nd Connections`, `A=Group Members`, `O=3rd + Everyone Else`.
+- `yoe`: object (optional) - `{ "min": int, "max": int }`.
+- `bing_postal_codes`: array of strings (optional)
+
+**Example Body:**
+
+```json
+{
+  "titles": ["Software Engineer", "Staff Engineer"],
+  "start": 0,
+  "keywords": "python distributed systems",
+  "first_names": ["Jane"],
+  "last_names": ["Doe"],
+  "skills": ["Kubernetes", "Go"],
+  "companies": ["Acme"],
+  "current_companies": ["Acme"],
+  "past_companies": ["Globex"],
+  "locations": ["San Francisco Bay Area"],
+  "schools": ["MIT"],
+  "industries": ["Software Development"],
+  "graduation_years": { "min": 2010, "max": 2015 },
+  "company_sizes": ["D", "E"],
+  "job_functions": [8, 13],
+  "seniorities": [4, 5],
+  "networks": ["S"],
+  "yoe": { "min": 3, "max": 10 },
+  "bing_postal_codes": ["94105"]
+}
+```
+
+**Notes:**
+
+- Each free-text filter is resolved by hitting the corresponding recruiter typeahead. The first match with a non-null ID is used.
+- If a free-text filter cannot be resolved, the API returns `400 Bad Request` with `error.code = "no_match"` (and the unresolved name in the message).
+- Mixed mode is not supported on a per-field basis: this endpoint expects free-text shapes for `titles`, `skills`, `companies`, `current_companies`, `past_companies`, `locations`, `schools`, `industries`, `company_sizes`, `job_functions`, `seniorities`, and `networks`. Other filters (`first_names`, `last_names`, `graduation_years`, `yoe`, `keywords`, `bing_postal_codes`) keep their normal shapes.
+
+**Response Details:**
+
+- `200 OK` on success. Body matches the shared search envelope above.
+- `400 Bad Request` with `error.code = "validation_error"` for invalid free-text shapes.
+- `400 Bad Request` with `error.code = "no_match"` when a free-text value cannot be resolved.
+- `423 Locked` with `error.code = "account_abs_not_valid"` when the account is not ready.
+- `424 Failed Dependency` with `error.code = "upstream_error"` when LinkedIn rejects the search.
+- `429 Too Many Requests` with `error.code = "recruiter_search_in_progress"` and a `Retry-After` header when another recruiter people-search is already running for this account. Only one recruiter people-search runs at a time per account, across all server processes; the lock covers the typeahead resolution step as well as the search call.
 
 ### SSE (Server-Sent Events)
 

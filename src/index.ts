@@ -13,6 +13,7 @@ dotenv.config();
 const API_KEY = process.env.ORG_API_KEY;
 const API_BASE_URL = process.env.API_BASE_URL || "https://api.prox.ist"; // Placeholder
 const PROX_ACCOUNT_ID = process.env.PROX_ACCOUNT_ID;
+const RECRUITER_LITE_ACCOUNT_ID = process.env.RECRUITER_LITE_ACCOUNT_ID;
 
 if (!API_KEY) {
   console.error("Error: ORG_API_KEY environment variable is required");
@@ -254,23 +255,116 @@ const TOOLS = [
           default: 25,
           description: "Number of results to request",
         },
-        decorationId: {
-          type: "string",
-          description: "LinkedIn jobs decoration ID",
+      },
+    },
+  },
+  {
+    name: "search_linkedin_recruiter_people_free_text",
+    description:
+      "Search Recruiter Lite people with free-text filters. All parameters are optional. This API cannot be called in parallel; only one pending recruiter lite search call is allowed at a time.",
+    inputSchema: {
+      type: "object",
+      description:
+        "All fields are optional. Omit any filters you do not need. This API cannot be called in parallel; only one pending recruiter lite search call is allowed at a time.",
+      properties: {
+        titles: {
+          type: "array",
+          items: { type: "string" },
+          description: "Job title of the people being searched",
         },
-        jobDetailsCount: {
-          type: "integer",
-          description: "Number of jobs to fetch detailed data for",
-        },
-        jobPostingDetailDescriptionStart: {
+        start: {
           type: "integer",
           default: 0,
-          description: "Description pagination start for job details",
+          description: "Pagination offset",
         },
-        jobPostingDetailDescriptionCount: {
-          type: "integer",
-          default: 5,
-          description: "Description pagination count for job details",
+        keywords: {
+          type: "string",
+          description: "Free-text search keywords",
+        },
+        first_names: {
+          type: "array",
+          items: { type: "string" },
+          description: "First names",
+        },
+        last_names: {
+          type: "array",
+          items: { type: "string" },
+          description: "Last names",
+        },
+        skills: {
+          type: "array",
+          items: { type: "string" },
+          description: "Free-text skill names",
+        },
+        companies: {
+          type: "array",
+          items: { type: "string" },
+          description: "Free-text company names",
+        },
+        current_companies: {
+          type: "array",
+          items: { type: "string" },
+          description: "Free-text current company names",
+        },
+        past_companies: {
+          type: "array",
+          items: { type: "string" },
+          description: "Free-text past company names",
+        },
+        locations: {
+          type: "array",
+          items: { type: "string" },
+          description: "Free-text location names",
+        },
+        schools: {
+          type: "array",
+          items: { type: "string" },
+          description: "Free-text school / university names",
+        },
+        industries: {
+          type: "array",
+          items: { type: "string" },
+          description: "Free-text industry names",
+        },
+        graduation_years: {
+          type: "object",
+          properties: {
+            min: { type: "integer" },
+            max: { type: "integer" },
+          },
+          description: "Graduation year range",
+        },
+        company_sizes: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Company size codes: A=Self-employed, B=1-10, C=11-50, D=51-200, E=201-500, F=501-1000, G=1001-5000, H=5001-10,000, I=10,000+",
+        },
+        job_functions: {
+          type: "array",
+          items: { type: "integer" },
+          description:
+            "Job function IDs. Allowed values: 1=Accounting, 2=Administrative, 3=Arts and Design, 4=Business Development, 5=Community and Social Services, 6=Consulting, 7=Education, 8=Engineering, 9=Entrepreneurship, 10=Finance, 11=Healthcare Services, 12=Human Resources, 13=Information Technology, 14=Legal, 15=Marketing, 16=Media and Communication, 17=Military and Protective Services, 18=Operations, 19=Product Management, 20=Program and Project Management, 21=Purchasing, 22=Quality Assurance, 23=Real Estate, 24=Research, 25=Sales, 26=Customer Success and Support",
+        },
+        seniorities: {
+          type: "array",
+          items: { type: "integer" },
+          description:
+            "Seniority IDs. Allowed values: 1=Unpaid, 2=Training, 3=Entry, 4=Senior, 5=Manager, 6=Director, 7=VP, 8=CXO, 9=Partner, 10=Owner",
+        },
+        networks: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Network codes. Allowed values: F=1st Connections, S=2nd Connections, A=Group Members, O=3rd + Everyone Else",
+        },
+        yoe: {
+          type: "object",
+          properties: {
+            min: { type: "integer" },
+            max: { type: "integer" },
+          },
+          description: "Years of experience range",
         },
       },
     },
@@ -483,6 +577,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 await apiClient.get(
                   `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/search-jobs-free-text`,
+                  rest,
+                ),
+              ),
+            },
+          ],
+        };
+      }
+      case "search_linkedin_recruiter_people_free_text": {
+        if (!RECRUITER_LITE_ACCOUNT_ID) {
+          throw new Error(
+            "RECRUITER_LITE_ACCOUNT_ID environment variable is required for recruiter lite search",
+          );
+        }
+        const rest = args || {};
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                await apiClient.post(
+                  `/v1/accounts/${RECRUITER_LITE_ACCOUNT_ID}/linkedin-recruiter/search-people-free-text`,
                   rest,
                 ),
               ),

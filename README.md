@@ -42,6 +42,7 @@ The server requires the following environment variables. You can set them in a `
 - `ORG_API_KEY`: Your Organization API Key.
 - `PROX_ACCOUNT_ID`: The user id in prox. This is used globally for all LinkedIn operations.
 - `API_BASE_URL`: The base URL for the Prox API (default: `https://api.prox.ist`).
+- `RECRUITER_LITE_ACCOUNT_ID`: The prox account id used for recruiter lite search tools.
 
 ## Usage
 
@@ -58,7 +59,8 @@ Add the following configuration to your MCP client (e.g., Claude Desktop, Trae, 
       "env": {
         "ORG_API_KEY": "<YOUR_ORG_API_KEY>",
         "PROX_ACCOUNT_ID": "<YOUR_PROX_ACCOUNT_ID>",
-        "API_BASE_URL": "<API_BASE_URL>"
+        "API_BASE_URL": "<API_BASE_URL>",
+        "RECRUITER_LITE_ACCOUNT_ID": "<YOUR_RECRUITER_LITE_ACCOUNT_ID>"
       }
     }
   }
@@ -74,6 +76,9 @@ Replace `/absolute/path/to/prox-mcp` with the actual path to your project direct
 | `get_linkedin_me`                    | Get "Me" Profile (Fetch & Update)         |
 | `get_linkedin_profile`               | Get LinkedIn Profile (Basic/Contact/Rich) |
 | `get_linkedin_connections`           | Get LinkedIn Connections                  |
+| `search_linkedin_people_free_text`   | Search LinkedIn People with Free-Text Filters |
+| `search_linkedin_jobs_free_text`     | Search LinkedIn Jobs with Free-Text Filters |
+| `search_linkedin_recruiter_people_free_text` | Search Recruiter Lite People with Free-Text Filters |
 | `send_linkedin_invite`               | Send LinkedIn Connection Invite           |
 | `get_linkedin_conversations`         | Get LinkedIn Conversations                |
 | `get_linkedin_conversation_messages` | Get Messages in Conversation              |
