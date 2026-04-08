@@ -358,6 +358,32 @@ const TOOLS = [
           description:
             "Network codes. Allowed values: F=1st Connections, S=2nd Connections, A=Group Members, O=3rd + Everyone Else",
         },
+        zip_codes: {
+          type: "array",
+          items: { type: "string" },
+          description: "Free-text postal codes such as 94105",
+        },
+        distance: {
+          type: "integer",
+          description: "Radius in miles around zip_codes; must be a positive integer",
+        },
+        profile_languages: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Language codes: en=English, es=Spanish, zh=Chinese, de=German, fr=French, it=Italian, pt=Portuguese, nl=Dutch, in=Bahasa Indonesia, ms=Malay, ro=Romanian, ru=Russian, tr=Turkish, sv=Swedish, pl=Polish, ja=Japanese, cs=Czech, da=Danish, no=Norwegian, ko=Korean, _o=Others",
+        },
+        recently_joined: {
+          type: "array",
+          items: { type: "integer" },
+          description:
+            "Recently-joined bucket IDs: 1=1 day ago, 2=2-7 days ago, 3=8-14 days ago, 4=15-30 days ago, 5=1-3 months ago",
+        },
+        is_veteran: {
+          type: "boolean",
+          description:
+            "When true, restricts results to members with a US military background",
+        },
         yoe: {
           type: "object",
           properties: {

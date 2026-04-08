@@ -827,7 +827,11 @@ If `return_original=true` is supplied as a query parameter, the raw upstream Lin
 - `networks`: array of `{ name, network_id }` (optional) - `network_id` is a single-letter code (`F=1st Connections`, `S=2nd Connections`, `A=Group Members`, `O=3rd + Everyone Else`).
 - `yoe`: object (optional) - `{ "min": int, "max": int }` years-of-experience bounds; either is optional.
 - `locations`: array of `{ name, geo_id }` (optional) - `geo_id` is the `location_id` from the location typeahead. Optional `scope` defaults to `"CURRENT"`.
-- `bing_postal_codes`: array of strings (optional) - Postal codes resolved via `zip-typeahead`.
+- `zip_codes`: array of `{ name, geo_id }` (optional) - Postal codes resolved via `zip-typeahead`. `name` is the postal code label (e.g. `"94105"`); `geo_id` is the typeahead `location_id`.
+- `distance`: integer (optional) - Radius in miles around the supplied `zip_codes`. Must be a positive integer.
+- `profile_languages`: array of `{ name, language_id }` (optional) - `language_id` is a short language code. Allowed values: `en=English`, `es=Spanish`, `zh=Chinese`, `de=German`, `fr=French`, `it=Italian`, `pt=Portuguese`, `nl=Dutch`, `in=Bahasa Indonesia`, `ms=Malay`, `ro=Romanian`, `ru=Russian`, `tr=Turkish`, `sv=Swedish`, `pl=Polish`, `ja=Japanese`, `cs=Czech`, `da=Danish`, `no=Norwegian`, `ko=Korean`, `_o=Others`.
+- `recently_joined`: array of `{ name, bucket_id }` (optional) - Filter for members who recently joined LinkedIn. `bucket_id` is an integer. Allowed values: `1=1 day ago`, `2=2-7 days ago`, `3=8-14 days ago`, `4=15-30 days ago`, `5=1-3 months ago`.
+- `is_veteran`: boolean (optional) - When `true`, restricts results to members with a US military background (LinkedIn `IS_VETERAN` facet). Omit or `false` to disable.
 
 **Example Body:**
 
@@ -851,7 +855,11 @@ If `return_original=true` is supplied as a query parameter, the raw upstream Lin
   "networks": [{ "name": "2nd Connections", "network_id": "S" }],
   "yoe": { "min": 3, "max": 10 },
   "locations": [{ "name": "San Francisco Bay Area", "geo_id": "90000084" }],
-  "bing_postal_codes": ["94105"]
+  "zip_codes": [{ "name": "94105", "geo_id": "100525183" }],
+  "distance": 25,
+  "profile_languages": [{ "name": "English", "language_id": "en" }],
+  "recently_joined": [{ "name": "1-3 months ago", "bucket_id": 5 }],
+  "is_veteran": true
 }
 ```
 
@@ -891,7 +899,11 @@ Same response envelope as `search-people`, but the most common filters can be su
 - `seniorities`: array of integers (optional) - Each value must be a valid `seniority_id`. Allowed values: `1=Unpaid`, `2=Training`, `3=Entry`, `4=Senior`, `5=Manager`, `6=Director`, `7=VP`, `8=CXO`, `9=Partner`, `10=Owner`.
 - `networks`: array of strings (optional) - Each value must be one of the single-letter codes: `F=1st Connections`, `S=2nd Connections`, `A=Group Members`, `O=3rd + Everyone Else`.
 - `yoe`: object (optional) - `{ "min": int, "max": int }`.
-- `bing_postal_codes`: array of strings (optional)
+- `zip_codes`: array of strings (optional) - Free-text postal codes (e.g. `"94105"`), resolved server-side via `zip-typeahead`.
+- `distance`: integer (optional) - Radius in miles around the supplied `zip_codes`. Must be a positive integer.
+- `profile_languages`: array of strings (optional) - Each value must be one of the language codes: `en=English`, `es=Spanish`, `zh=Chinese`, `de=German`, `fr=French`, `it=Italian`, `pt=Portuguese`, `nl=Dutch`, `in=Bahasa Indonesia`, `ms=Malay`, `ro=Romanian`, `ru=Russian`, `tr=Turkish`, `sv=Swedish`, `pl=Polish`, `ja=Japanese`, `cs=Czech`, `da=Danish`, `no=Norwegian`, `ko=Korean`, `_o=Others`.
+- `recently_joined`: array of integers (optional) - Each value must be a valid recently-joined `bucket_id`. Allowed values: `1=1 day ago`, `2=2-7 days ago`, `3=8-14 days ago`, `4=15-30 days ago`, `5=1-3 months ago`.
+- `is_veteran`: boolean (optional) - When `true`, restricts results to members with a US military background.
 
 **Example Body:**
 
@@ -915,7 +927,11 @@ Same response envelope as `search-people`, but the most common filters can be su
   "seniorities": [4, 5],
   "networks": ["S"],
   "yoe": { "min": 3, "max": 10 },
-  "bing_postal_codes": ["94105"]
+  "zip_codes": ["94105"],
+  "distance": 25,
+  "profile_languages": ["en"],
+  "recently_joined": [5],
+  "is_veteran": true
 }
 ```
 
@@ -923,7 +939,7 @@ Same response envelope as `search-people`, but the most common filters can be su
 
 - Each free-text filter is resolved by hitting the corresponding recruiter typeahead. The first match with a non-null ID is used.
 - If a free-text filter cannot be resolved, the API returns `400 Bad Request` with `error.code = "no_match"` (and the unresolved name in the message).
-- Mixed mode is not supported on a per-field basis: this endpoint expects free-text shapes for `titles`, `skills`, `companies`, `current_companies`, `past_companies`, `locations`, `schools`, `industries`, `company_sizes`, `job_functions`, `seniorities`, and `networks`. Other filters (`first_names`, `last_names`, `graduation_years`, `yoe`, `keywords`, `bing_postal_codes`) keep their normal shapes.
+- Mixed mode is not supported on a per-field basis: this endpoint expects free-text shapes for `titles`, `skills`, `companies`, `current_companies`, `past_companies`, `locations`, `zip_codes`, `schools`, `industries`, `company_sizes`, `job_functions`, `seniorities`, `networks`, `profile_languages`, and `recently_joined`. Other filters (`first_names`, `last_names`, `graduation_years`, `yoe`, `keywords`, `distance`, `is_veteran`) keep their normal shapes.
 
 **Response Details:**
 
