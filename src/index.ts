@@ -269,7 +269,20 @@ const TOOLS = [
       properties: {
         titles: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            anyOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  filter_type: { type: "string", enum: ["can_have", "must_have", "doesnt_have"] },
+                  time_scope: { type: "string", enum: ["current_or_past", "current", "past", "past_not_current"] },
+                },
+                required: ["name"],
+              },
+            ],
+          },
           description: "Job title of the people being searched",
         },
         start: {
@@ -293,37 +306,123 @@ const TOOLS = [
         },
         skills: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            anyOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  filter_type: { type: "string", enum: ["can_have", "must_have", "doesnt_have"] },
+                },
+                required: ["name"],
+              },
+            ],
+          },
           description: "Free-text skill names",
         },
         companies: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            anyOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  filter_type: { type: "string", enum: ["can_have", "must_have", "doesnt_have"] },
+                  time_scope: { type: "string", enum: ["current_or_past", "current", "past", "past_not_current"] },
+                },
+                required: ["name"],
+              },
+            ],
+          },
           description: "Free-text company names",
         },
         current_companies: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            anyOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  filter_type: { type: "string", enum: ["can_have", "must_have", "doesnt_have"] },
+                },
+                required: ["name"],
+              },
+            ],
+          },
           description: "Free-text current company names",
         },
         past_companies: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            anyOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  filter_type: { type: "string", enum: ["can_have", "must_have", "doesnt_have"] },
+                },
+                required: ["name"],
+              },
+            ],
+          },
           description: "Free-text past company names",
         },
         locations: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            anyOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  filter_type: { type: "string", enum: ["can_have", "must_have", "doesnt_have"] },
+                  geo_scope: { type: "string", enum: ["current", "preferred_not_current", "current_or_preferred"] },
+                },
+                required: ["name"],
+              },
+            ],
+          },
           description: "Free-text location names",
         },
         schools: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            anyOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  filter_type: { type: "string", enum: ["can_have", "must_have", "doesnt_have"] },
+                },
+                required: ["name"],
+              },
+            ],
+          },
           description: "Free-text school / university names",
         },
         industries: {
           type: "array",
-          items: { type: "string" },
+          items: {
+            anyOf: [
+              { type: "string" },
+              {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  filter_type: { type: "string", enum: ["can_have", "must_have", "doesnt_have"] },
+                },
+                required: ["name"],
+              },
+            ],
+          },
           description: "Free-text industry names",
         },
         graduation_years: {

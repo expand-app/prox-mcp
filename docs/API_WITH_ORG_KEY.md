@@ -801,6 +801,62 @@ Both `search-people` and `search-people-free-text` return the same parsed envelo
 
 If `return_original=true` is supplied as a query parameter, the raw upstream LinkedIn response body is returned instead of the parsed envelope.
 
+#### Recruiter Search People — Per-Entry Sub-Filters
+
+Several list-based filters on both `search-people` and `search-people-free-text` accept optional per-entry sub-filters that map onto LinkedIn's internal query flags. All sub-filters default to the legacy behavior when omitted, so existing request bodies continue to work unchanged.
+
+**`filter_type`** — inclusion / exclusion mode. Maps onto LinkedIn's `negated` and `required` flags.
+
+| Value                    | Meaning                                                       | `negated` / `required` |
+| :----------------------- | :------------------------------------------------------------ | :--------------------- |
+| `"can_have"` _(default)_ | Optional / soft match — boosts relevance but does not filter. | `false` / `false`      |
+| `"must_have"`            | Mandatory inclusion — every result must match this entry.     | `false` / `true`       |
+| `"doesnt_have"`          | Exclusion — drop every result that matches this entry.        | `true` / `false`       |
+
+Applies to: `titles`, `locations`, `skills`, `companies`, `current_companies`, `past_companies`, `industries`, `schools`.
+
+**`time_scope`** — restricts title/company matching to a particular stretch of the member's work history. Maps onto the LinkedIn `scope.timeScope` enum.
+
+| Value                           | Meaning                                                                                |
+| :------------------------------ | :------------------------------------------------------------------------------------- |
+| `"current_or_past"` _(default)_ | Match anyone who currently holds or previously held this title/company.                |
+| `"current"`                     | Only match members currently holding this title/working at this company.               |
+| `"past"`                        | Match members whose history includes this title/company (current holders still count). |
+| `"past_not_current"`            | Previously held but not currently held — classic "ex-X" filter.                        |
+
+Applies to: `titles`, `companies`.
+
+**`geo_scope`** — restricts location matching between the member's current location and their stated relocation preference. Maps onto the LinkedIn `scope.geoRegionScope` enum.
+
+| Value                     | Meaning                                                                                                |
+| :------------------------ | :----------------------------------------------------------------------------------------------------- |
+| `"current"` _(default)_   | Currently located in this area.                                                                        |
+| `"preferred_not_current"` | "Open to relocate only" — member expressed preference for this area but does not currently live there. |
+| `"current_or_preferred"`  | Currently located in this area OR open to relocate to it.                                              |
+
+Applies to: `locations`.
+
+**How sub-filters appear in request bodies:**
+
+- **ID-bearing endpoint** (`search-people`): add the sub-filter field alongside the existing `name` / id field. Example:
+  ```json
+  {
+    "name": "Software Engineer",
+    "title_id": 9,
+    "filter_type": "must_have",
+    "time_scope": "current"
+  }
+  ```
+- **Free-text endpoint** (`search-people-free-text`): each supported filter accepts either a legacy plain string _or_ a dict `{ "name": "...", "filter_type": "...", "time_scope": "...", "geo_scope": "..." }`. The two forms may be mixed within the same list. Example:
+  ```json
+  "past_companies": [
+    "Amazon",
+    { "name": "Meta", "filter_type": "doesnt_have" }
+  ]
+  ```
+
+Sub-filters compose orthogonally — you can set `filter_type` and `time_scope` on the same title, or `filter_type` and `geo_scope` on the same location. Unknown values return `400 Bad Request` with `error.code = "validation_error"` and the list of allowed values.
+
 #### `POST /v1/accounts/<account_id>/linkedin-recruiter/search-people` (Recruiter Search People)
 
 **Query Parameters:**
@@ -809,24 +865,24 @@ If `return_original=true` is supplied as a query parameter, the raw upstream Lin
 
 **Body Parameters (JSON):**
 
-- `titles`: array (optional) - List of `{ name, title_id }` entries. Resolve `title_id` via `linkedin-recruiter/job-title-typeahead`. Forwarded to LinkedIn as `query.occupations[]` (matched against LinkedIn's standardized title taxonomy).
+- `titles`: array (optional) - List of `{ name, title_id }` entries. Resolve `title_id` via `linkedin-recruiter/job-title-typeahead`. Forwarded to LinkedIn as `query.occupations[]` (matched against LinkedIn's standardized title taxonomy). **Supports sub-filters** `filter_type` and `time_scope` — see the "Per-Entry Sub-Filters" section above.
 - `start`: integer (optional, default: 0) - Pagination offset.
 - `keywords`: string (optional) - Free-text keyword filter.
 - `first_names`: array of strings (optional)
 - `last_names`: array of strings (optional)
-- `skills`: array of `{ name, skill_id }` (optional) - Resolve via `skill-typeahead`.
-- `companies`: array of `{ name, company_id }` (optional) - Resolve via `company-typeahead`.
-- `current_companies`: array of `{ name, company_id }` (optional)
-- `past_companies`: array of `{ name, company_id }` (optional)
-- `schools`: array of `{ name, school_id }` (optional) - `school_id` is the typeahead `organization_id`.
+- `skills`: array of `{ name, skill_id }` (optional) - Resolve via `skill-typeahead`. **Supports sub-filter** `filter_type`.
+- `companies`: array of `{ name, company_id }` (optional) - Resolve via `company-typeahead`. **Supports sub-filters** `filter_type` and `time_scope`.
+- `current_companies`: array of `{ name, company_id }` (optional). **Supports sub-filter** `filter_type`.
+- `past_companies`: array of `{ name, company_id }` (optional). **Supports sub-filter** `filter_type`.
+- `schools`: array of `{ name, school_id }` (optional) - `school_id` is the typeahead `organization_id`. **Supports sub-filter** `filter_type`.
 - `graduation_years`: object (optional) - `{ "min": int, "max": int }`; either bound is optional.
-- `industries`: array of `{ name, industry_id }` (optional) - Resolve via `industry-typeahead`.
+- `industries`: array of `{ name, industry_id }` (optional) - Resolve via `industry-typeahead`. **Supports sub-filter** `filter_type`.
 - `seniorities`: array of `{ name, seniority_id }` (optional) - `seniority_id` is an integer (`1=Unpaid`, `2=Training`, `3=Entry`, `4=Senior`, `5=Manager`, `6=Director`, `7=VP`, `8=CXO`, `9=Partner`, `10=Owner`).
 - `company_sizes`: array of `{ name, size_id }` (optional) - `size_id` is a single-letter code (`A=Self-employed`, `B=1-10`, `C=11-50`, `D=51-200`, `E=201-500`, `F=501-1000`, `G=1001-5000`, `H=5001-10,000`, `I=10,000+`).
 - `job_functions`: array of `{ name, function_id }` (optional) - `function_id` is an integer. Allowed values: `1=Accounting`, `2=Administrative`, `3=Arts and Design`, `4=Business Development`, `5=Community and Social Services`, `6=Consulting`, `7=Education`, `8=Engineering`, `9=Entrepreneurship`, `10=Finance`, `11=Healthcare Services`, `12=Human Resources`, `13=Information Technology`, `14=Legal`, `15=Marketing`, `16=Media and Communication`, `17=Military and Protective Services`, `18=Operations`, `19=Product Management`, `20=Program and Project Management`, `21=Purchasing`, `22=Quality Assurance`, `23=Real Estate`, `24=Research`, `25=Sales`, `26=Customer Success and Support`.
 - `networks`: array of `{ name, network_id }` (optional) - `network_id` is a single-letter code (`F=1st Connections`, `S=2nd Connections`, `A=Group Members`, `O=3rd + Everyone Else`).
 - `yoe`: object (optional) - `{ "min": int, "max": int }` years-of-experience bounds; either is optional.
-- `locations`: array of `{ name, geo_id }` (optional) - `geo_id` is the `location_id` from the location typeahead. Optional `scope` defaults to `"CURRENT"`.
+- `locations`: array of `{ name, geo_id }` (optional) - `geo_id` is the `location_id` from the location typeahead. **Supports sub-filters** `filter_type` and `geo_scope` (defaults to `"current"`).
 - `zip_codes`: array of `{ name, geo_id }` (optional) - Postal codes resolved via `zip-typeahead`. `name` is the postal code label (e.g. `"94105"`); `geo_id` is the typeahead `location_id`.
 - `distance`: integer (optional) - Radius in miles around the supplied `zip_codes`. Must be a positive integer.
 - `profile_languages`: array of `{ name, language_id }` (optional) - `language_id` is a short language code. Allowed values: `en=English`, `es=Spanish`, `zh=Chinese`, `de=German`, `fr=French`, `it=Italian`, `pt=Portuguese`, `nl=Dutch`, `in=Bahasa Indonesia`, `ms=Malay`, `ro=Romanian`, `ru=Russian`, `tr=Turkish`, `sv=Swedish`, `pl=Polish`, `ja=Japanese`, `cs=Czech`, `da=Danish`, `no=Norwegian`, `ko=Korean`, `_o=Others`.
@@ -837,24 +893,60 @@ If `return_original=true` is supplied as a query parameter, the raw upstream Lin
 
 ```json
 {
-  "titles": [{ "name": "Software Engineer", "title_id": 9 }],
+  "titles": [
+    {
+      "name": "Software Engineer",
+      "title_id": 9,
+      "filter_type": "must_have",
+      "time_scope": "current"
+    },
+    { "name": "Staff Engineer", "title_id": 25201 },
+    { "name": "Recruiter", "title_id": 346, "filter_type": "doesnt_have" }
+  ],
   "start": 0,
   "keywords": "python distributed systems",
   "first_names": ["Jane"],
   "last_names": ["Doe"],
-  "skills": [{ "name": "Kubernetes", "skill_id": "1234" }],
-  "companies": [{ "name": "Acme", "company_id": "1441" }],
+  "skills": [
+    { "name": "Kubernetes", "skill_id": "1234", "filter_type": "must_have" },
+    { "name": "PHP", "skill_id": "6", "filter_type": "doesnt_have" }
+  ],
+  "companies": [
+    {
+      "name": "Amazon",
+      "company_id": "1586",
+      "filter_type": "must_have",
+      "time_scope": "past_not_current"
+    }
+  ],
   "current_companies": [{ "name": "Acme", "company_id": "1441" }],
-  "past_companies": [{ "name": "Globex", "company_id": "1442" }],
-  "schools": [{ "name": "MIT", "school_id": "1234" }],
+  "past_companies": [
+    { "name": "Globex", "company_id": "1442", "filter_type": "doesnt_have" }
+  ],
+  "schools": [
+    { "name": "MIT", "school_id": "1234", "filter_type": "must_have" }
+  ],
   "graduation_years": { "min": 2010, "max": 2015 },
-  "industries": [{ "name": "Software Development", "industry_id": "4" }],
+  "industries": [
+    {
+      "name": "Software Development",
+      "industry_id": "4",
+      "filter_type": "must_have"
+    }
+  ],
   "seniorities": [{ "name": "Senior", "seniority_id": 4 }],
   "company_sizes": [{ "name": "51-200", "size_id": "D" }],
   "job_functions": [{ "name": "Engineering", "function_id": 8 }],
   "networks": [{ "name": "2nd Connections", "network_id": "S" }],
   "yoe": { "min": 3, "max": 10 },
-  "locations": [{ "name": "San Francisco Bay Area", "geo_id": "90000084" }],
+  "locations": [
+    {
+      "name": "San Francisco Bay Area",
+      "geo_id": "90000084",
+      "filter_type": "must_have",
+      "geo_scope": "current_or_preferred"
+    }
+  ],
   "zip_codes": [{ "name": "94105", "geo_id": "100525183" }],
   "distance": 25,
   "profile_languages": [{ "name": "English", "language_id": "en" }],
@@ -881,18 +973,18 @@ Same response envelope as `search-people`, but the most common filters can be su
 
 **Body Parameters (JSON):**
 
-- `titles`: array of strings (optional) - Free-text job title names, resolved via `job-title-typeahead`. Forwarded to LinkedIn as `query.occupations[]`.
+- `titles`: array of strings _or_ dicts (optional) - Free-text job title names, resolved via `job-title-typeahead`. Forwarded to LinkedIn as `query.occupations[]`. Dict form: `{ name, filter_type?, time_scope? }` — see "Per-Entry Sub-Filters".
 - `start`: integer (optional, default: 0) - Pagination offset.
 - `keywords`: string (optional)
 - `first_names`: array of strings (optional)
 - `last_names`: array of strings (optional)
-- `skills`: array of strings (optional) - Free-text skill names, resolved via `skill-typeahead`.
-- `companies`: array of strings (optional) - Free-text company names, resolved via `company-typeahead`.
-- `current_companies`: array of strings (optional) - Free-text company names, resolved via `company-typeahead`.
-- `past_companies`: array of strings (optional) - Free-text company names, resolved via `company-typeahead`.
-- `locations`: array of strings (optional) - Free-text location names, resolved via `location-typeahead`.
-- `schools`: array of strings (optional) - Free-text school names, resolved via `school-typeahead` (uses `organization_id`).
-- `industries`: array of strings (optional) - Free-text industry names, resolved via `industry-typeahead`.
+- `skills`: array of strings _or_ dicts (optional) - Free-text skill names, resolved via `skill-typeahead`. Dict form: `{ name, filter_type? }`.
+- `companies`: array of strings _or_ dicts (optional) - Free-text company names, resolved via `company-typeahead`. Dict form: `{ name, filter_type?, time_scope? }`.
+- `current_companies`: array of strings _or_ dicts (optional) - Free-text company names, resolved via `company-typeahead`. Dict form: `{ name, filter_type? }`.
+- `past_companies`: array of strings _or_ dicts (optional) - Free-text company names, resolved via `company-typeahead`. Dict form: `{ name, filter_type? }`.
+- `locations`: array of strings _or_ dicts (optional) - Free-text location names, resolved via `location-typeahead`. Dict form: `{ name, filter_type?, geo_scope? }`.
+- `schools`: array of strings _or_ dicts (optional) - Free-text school names, resolved via `school-typeahead` (uses `organization_id`). Dict form: `{ name, filter_type? }`.
+- `industries`: array of strings _or_ dicts (optional) - Free-text industry names, resolved via `industry-typeahead`. Dict form: `{ name, filter_type? }`.
 - `graduation_years`: object (optional) - `{ "min": int, "max": int }`.
 - `company_sizes`: array of strings (optional) - Each value must be one of the single-letter codes: `A=Self-employed`, `B=1-10`, `C=11-50`, `D=51-200`, `E=201-500`, `F=501-1000`, `G=1001-5000`, `H=5001-10,000`, `I=10,000+`.
 - `job_functions`: array of integers (optional) - Each value must be a valid `function_id`. Allowed values: `1=Accounting`, `2=Administrative`, `3=Arts and Design`, `4=Business Development`, `5=Community and Social Services`, `6=Consulting`, `7=Education`, `8=Engineering`, `9=Entrepreneurship`, `10=Finance`, `11=Healthcare Services`, `12=Human Resources`, `13=Information Technology`, `14=Legal`, `15=Marketing`, `16=Media and Communication`, `17=Military and Protective Services`, `18=Operations`, `19=Product Management`, `20=Program and Project Management`, `21=Purchasing`, `22=Quality Assurance`, `23=Real Estate`, `24=Research`, `25=Sales`, `26=Customer Success and Support`.
@@ -909,18 +1001,47 @@ Same response envelope as `search-people`, but the most common filters can be su
 
 ```json
 {
-  "titles": ["Software Engineer", "Staff Engineer"],
+  "titles": [
+    {
+      "name": "Software Engineer",
+      "filter_type": "must_have",
+      "time_scope": "current"
+    },
+    "Staff Engineer",
+    { "name": "Recruiter", "filter_type": "doesnt_have" }
+  ],
   "start": 0,
   "keywords": "python distributed systems",
   "first_names": ["Jane"],
   "last_names": ["Doe"],
-  "skills": ["Kubernetes", "Go"],
-  "companies": ["Acme"],
+  "skills": [
+    { "name": "Kubernetes", "filter_type": "must_have" },
+    "Go",
+    { "name": "PHP", "filter_type": "doesnt_have" }
+  ],
+  "companies": [
+    {
+      "name": "Amazon",
+      "filter_type": "must_have",
+      "time_scope": "past_not_current"
+    }
+  ],
   "current_companies": ["Acme"],
-  "past_companies": ["Globex"],
-  "locations": ["San Francisco Bay Area"],
-  "schools": ["MIT"],
-  "industries": ["Software Development"],
+  "past_companies": [
+    "Globex",
+    { "name": "Oracle", "filter_type": "doesnt_have" }
+  ],
+  "locations": [
+    {
+      "name": "San Francisco Bay Area",
+      "filter_type": "must_have",
+      "geo_scope": "current_or_preferred"
+    }
+  ],
+  "schools": [{ "name": "MIT", "filter_type": "must_have" }],
+  "industries": [
+    { "name": "Software Development", "filter_type": "must_have" }
+  ],
   "graduation_years": { "min": 2010, "max": 2015 },
   "company_sizes": ["D", "E"],
   "job_functions": [8, 13],
@@ -939,7 +1060,8 @@ Same response envelope as `search-people`, but the most common filters can be su
 
 - Each free-text filter is resolved by hitting the corresponding recruiter typeahead. The first match with a non-null ID is used.
 - If a free-text filter cannot be resolved, the API returns `400 Bad Request` with `error.code = "no_match"` (and the unresolved name in the message).
-- Mixed mode is not supported on a per-field basis: this endpoint expects free-text shapes for `titles`, `skills`, `companies`, `current_companies`, `past_companies`, `locations`, `zip_codes`, `schools`, `industries`, `company_sizes`, `job_functions`, `seniorities`, `networks`, `profile_languages`, and `recently_joined`. Other filters (`first_names`, `last_names`, `graduation_years`, `yoe`, `keywords`, `distance`, `is_veteran`) keep their normal shapes.
+- This endpoint expects free-text shapes for `titles`, `skills`, `companies`, `current_companies`, `past_companies`, `locations`, `zip_codes`, `schools`, `industries`, `company_sizes`, `job_functions`, `seniorities`, `networks`, `profile_languages`, and `recently_joined`. Other filters (`first_names`, `last_names`, `graduation_years`, `yoe`, `keywords`, `distance`, `is_veteran`) keep their normal shapes.
+- For filters that support **per-entry sub-filters** (`titles`, `skills`, `companies`, `current_companies`, `past_companies`, `locations`, `schools`, `industries`), each entry may be either a plain string (legacy form, no sub-filters — same behavior as before) _or_ a dict `{ name, filter_type?, time_scope?, geo_scope? }` with only the sub-filters that apply to that field. The two forms can be mixed within the same list. See "Per-Entry Sub-Filters" above for the supported values and semantics.
 
 **Response Details:**
 
