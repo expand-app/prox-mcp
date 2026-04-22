@@ -290,6 +290,13 @@ const TOOLS = [
           default: 0,
           description: "Pagination offset",
         },
+        count: {
+          type: "integer",
+          default: 25,
+          minimum: 1,
+          maximum: 50,
+          description: "Maximum number of results to return per page",
+        },
         keywords: {
           type: "string",
           description: "Free-text search keywords",

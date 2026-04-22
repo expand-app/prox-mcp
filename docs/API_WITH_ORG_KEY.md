@@ -975,6 +975,7 @@ Same response envelope as `search-people`, but the most common filters can be su
 
 - `titles`: array of strings _or_ dicts (optional) - Free-text job title names, resolved via `job-title-typeahead`. Forwarded to LinkedIn as `query.occupations[]`. Dict form: `{ name, filter_type?, time_scope? }` — see "Per-Entry Sub-Filters".
 - `start`: integer (optional, default: 0) - Pagination offset.
+- `count`: integer (optional, default: 25, min: 1, max: 50) - Maximum number of results to return per page.
 - `keywords`: string (optional)
 - `first_names`: array of strings (optional)
 - `last_names`: array of strings (optional)
