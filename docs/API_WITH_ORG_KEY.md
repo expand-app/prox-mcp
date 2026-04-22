@@ -867,6 +867,7 @@ Sub-filters compose orthogonally — you can set `filter_type` and `time_scope` 
 
 - `titles`: array (optional) - List of `{ name, title_id }` entries. Resolve `title_id` via `linkedin-recruiter/job-title-typeahead`. Forwarded to LinkedIn as `query.occupations[]` (matched against LinkedIn's standardized title taxonomy). **Supports sub-filters** `filter_type` and `time_scope` — see the "Per-Entry Sub-Filters" section above.
 - `start`: integer (optional, default: 0) - Pagination offset.
+- `count`: integer (optional, default: 25, min: 1, max: 50) - Maximum number of results to return per page.
 - `keywords`: string (optional) - Free-text keyword filter.
 - `first_names`: array of strings (optional)
 - `last_names`: array of strings (optional)
