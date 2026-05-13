@@ -49,6 +49,7 @@ X-Api-Key: <YOUR_ORG_API_KEY>
 | `GET`  | `/v1/accounts/<account_id>/linkedin/search-jobs-free-text`                    | Search LinkedIn Jobs with Free-Text Filters   |
 | `POST` | `/v1/accounts/<account_id>/linkedin/invite`                                   | Send LinkedIn Connection Invite               |
 | `GET`  | `/v1/accounts/<account_id>/linkedin/conversations`                            | Get LinkedIn Conversations                    |
+| `GET`  | `/v1/accounts/<account_id>/linkedin/conversations/search`                     | Search LinkedIn Conversations by Keywords     |
 | `GET`  | `/v1/accounts/<account_id>/linkedin/conversations/<conversation_id>/messages` | Get Messages in Conversation                  |
 | `GET`  | `/v1/accounts/<account_id>/linkedin/conversations/with/<other_hash_id>`       | Get Conversation with Recipient               |
 | `POST` | `/v1/accounts/<account_id>/linkedin/message`                                  | Send LinkedIn Message                         |
@@ -661,6 +662,36 @@ No parameters required.
 - `count`: integer (optional, default: 20)
 - `last_activity_at`: integer (optional) - Timestamp for pagination.
 - `return_original`: boolean (optional, default: false) - If true, returns the original LinkedIn response body.
+
+#### `GET /v1/accounts/<account_id>/linkedin/conversations/search` (Search Conversations by Keywords)
+
+Searches the current account's LinkedIn conversations (inbox, spam, archive) using a free-text keyword. Matches against participant names and message bodies. Each conversation in the response has the same shape as `GET .../linkedin/conversations`.
+
+**Query Parameters:**
+
+- `keywords`: string (required) - Search query matched against participants and message bodies. Whitespace-only values are rejected with `missing_param`.
+- `hash_id`: string (optional) - Explicit account hash ID (usually inferred from the account).
+- `count`: integer (optional, default: 20)
+- `categories`: string (optional, default: `INBOX,SPAM,ARCHIVE`) - Comma-separated whitelist; allowed values: `INBOX`, `SPAM`, `ARCHIVE`, `INMAIL`. Any other value returns `invalid_param`.
+- `first_degree_connections`: boolean (optional, default: false) - If true, restricts results to first-degree connections only.
+- `next_cursor`: string (optional) - Cursor returned by a previous call's `next_cursor` field. Used for pagination.
+- `return_original`: boolean (optional, default: false) - If true, returns the raw upstream LinkedIn payload.
+
+**Response (200 OK):**
+
+```json
+{
+  "conversations": [ /* same per-item shape as /linkedin/conversations */ ],
+  "next_cursor": "MCYyMA==" | null
+}
+```
+
+- `next_cursor` is `null` when there are no more pages.
+- Empty results return `{ "conversations": [], "next_cursor": null }` — not an error.
+- `400 Bad Request` with `error.code = "missing_param"` when `keywords` is missing/blank.
+- `400 Bad Request` with `error.code = "invalid_param"` when `count` is not an integer or `categories` contains an unknown value.
+- `423 Locked` with `error.code = "account_abs_not_valid"` when the account is not ready.
+- `424 Failed Dependency` with `error.code = "upstream_error"` when LinkedIn returns a non-200.
 
 #### `GET /v1/accounts/<account_id>/linkedin/conversations/<conversation_id>/messages`
 
