@@ -525,6 +525,33 @@ const TOOLS = [
     },
   },
   {
+    name: "search_linkedin_conversations",
+    description: "Search LinkedIn Conversations by Keywords",
+    inputSchema: {
+      type: "object",
+      properties: {
+        keywords: {
+          type: "string",
+          description:
+            "Search query matched against conversation participants and message bodies",
+        },
+        hash_id: {
+          type: "string",
+          description: "The hash id in linkedin, which should start with `ACo`",
+        },
+        count: { type: "integer", default: 20 },
+        categories: {
+          type: "string",
+          description:
+            "Comma-separated list of INBOX, SPAM, ARCHIVE, INMAIL. Defaults to INBOX,SPAM,ARCHIVE.",
+        },
+        first_degree_connections: { type: "boolean", default: false },
+        next_cursor: { type: "string" },
+      },
+      required: ["keywords"],
+    },
+  },
+  {
     name: "get_linkedin_conversation_messages",
     description: "Get Messages in Conversation",
     inputSchema: {
@@ -670,6 +697,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               text: JSON.stringify(
                 await apiClient.get(
                   `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/conversations`,
+                  rest,
+                ),
+              ),
+            },
+          ],
+        };
+      }
+      case "search_linkedin_conversations": {
+        const rest = args || {};
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                await apiClient.get(
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/conversations/search`,
                   rest,
                 ),
               ),
