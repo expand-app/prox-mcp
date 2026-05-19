@@ -51,7 +51,8 @@ const TOOLS = [
   },
   {
     name: "get_linkedin_profile",
-    description: "Get LinkedIn Profile (Basic/Contact/Rich)",
+    description:
+      "Get a LinkedIn member's full profile. Returns the canonical LinkedInProfile shape (source: 'full') with identity, location, contact, experience[], education[], about, and demographics. Fields the recruiter-lite source cannot populate (e.g. email, phone_numbers, about, birth_date) are populated here; recruiter-lite-only fields (industry, num_connections, top_features, insights, recruiting) are null. Same top-level key set as search_linkedin_recruiter_people_free_text candidate entries.",
     inputSchema: {
       type: "object",
       properties: {
@@ -277,7 +278,7 @@ const TOOLS = [
   {
     name: "search_linkedin_recruiter_people_free_text",
     description:
-      "Search Recruiter Lite people with free-text filters. All parameters are optional. This API cannot be called in parallel; only one pending recruiter lite search call is allowed at a time.",
+      "Search Recruiter Lite people with free-text filters. Each entry in `candidates[]` follows the canonical LinkedInProfile shape (source: 'recruiter_lite') matching get_linkedin_profile's top-level key set. Recruiter-lite-specific fields (industry, num_connections, can_send_inmail, open_to_work, top_features, insights, recruiting, profile_urn, hit_urn, t_hash_id) are populated; full-only fields (email, phone_numbers, about, birth_date, etc.) are null. experience[] merges currentPositions + workExperience with an is_current flag per entry. All parameters are optional. This API cannot be called in parallel; only one pending recruiter lite search call is allowed at a time.",
     inputSchema: {
       type: "object",
       description:
