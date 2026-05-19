@@ -514,6 +514,12 @@ const TOOLS = [
           },
           description: "Years of experience range",
         },
+        return_original: {
+          type: "boolean",
+          default: false,
+          description:
+            "If true, returns the raw upstream LinkedIn response body instead of the parsed envelope",
+        },
       },
     },
   },
