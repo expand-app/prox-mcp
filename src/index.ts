@@ -64,6 +64,22 @@ const TOOLS = [
     },
   },
   {
+    name: "resolve_linkedin_hash_ids",
+    description:
+      "Convert one or more LinkedIn public_ids (e.g. 'mingzhil') into hash_ids (starting with 'ACo'). Batch-friendly.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        public_ids: {
+          type: "array",
+          items: { type: "string" },
+          description: "List of LinkedIn public_ids to resolve.",
+        },
+      },
+      required: ["public_ids"],
+    },
+  },
+  {
     name: "get_linkedin_connections",
     description: "Get LinkedIn Connections",
     inputSchema: {
@@ -657,6 +673,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 await apiClient.get(
                   `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/profile`,
                   { profile_id },
+                ),
+              ),
+            },
+          ],
+        };
+      }
+      case "resolve_linkedin_hash_ids": {
+        const { public_ids } = (args || {}) as { public_ids: string[] };
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                await apiClient.get(
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/resolve-hash-ids`,
+                  { public_ids: (public_ids || []).join(",") },
                 ),
               ),
             },
