@@ -805,8 +805,6 @@ Both `search-people` and `search-people-free-text` return the same parsed envelo
 
 | Field                | Type          | Description                                           |
 | :------------------- | :------------ | :---------------------------------------------------- |
-| `hit_urn`            | string\|null  | Recruiter search hit URN                              |
-| `profile_urn`        | string\|null  | Member profile URN                                    |
 | `t_hash_id`          | string\|null  | Recruiter `t_` hash ID extracted from the profile URN |
 | `public_id`          | string\|null  | LinkedIn public profile identifier                    |
 | `member_id`          | integer\|null | LinkedIn member ID                                    |
