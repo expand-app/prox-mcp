@@ -213,7 +213,8 @@ const TOOLS = [
         },
         applyWithLinkedIn: {
           type: "boolean",
-          description: "Restrict to Easy Apply / Apply with LinkedIn jobs",
+          description:
+            "Set true to restrict to Easy Apply jobs. false or omitted returns all jobs — LinkedIn has no 'non-Easy-Apply only' filter (false is ignored, same results as omitting). Each returned job carries an inferred easy_apply boolean you can filter on client-side.",
         },
         commitment: {
           type: "integer",
