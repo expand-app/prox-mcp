@@ -65,6 +65,27 @@ const TOOLS = [
     },
   },
   {
+    name: "get_linkedin_company_details",
+    description:
+      "Get a LinkedIn company's normalized details. Accept exactly one of `public_id` (the LinkedIn universalName slug, e.g. 'deutsche-bank') or `company_name` (raw name; the backend searches and picks the top match). Returns name, industry, employee_count, headquarter, website, specialties, etc.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        public_id: {
+          type: "string",
+          description:
+            "LinkedIn universalName / public id slug, e.g. 'deutsche-bank'",
+        },
+        company_name: {
+          type: "string",
+          description:
+            "Raw company name; the backend will search LinkedIn and pick the top match",
+        },
+      },
+      oneOf: [{ required: ["public_id"] }, { required: ["company_name"] }],
+    },
+  },
+  {
     name: "resolve_linkedin_hash_ids",
     description:
       "Convert one or more LinkedIn public_ids (e.g. 'mingzhil') into hash_ids (starting with 'ACo'). Batch-friendly.",
@@ -681,6 +702,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 await apiClient.get(
                   `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/profile`,
                   { profile_id },
+                ),
+              ),
+            },
+          ],
+        };
+      }
+      case "get_linkedin_company_details": {
+        const { public_id, company_name } = (args || {}) as {
+          public_id?: string;
+          company_name?: string;
+        };
+        const query: Record<string, string> = {};
+        if (public_id) query.public_id = public_id;
+        if (company_name) query.company_name = company_name;
+        return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify(
+                await apiClient.get(
+                  `/v1/accounts/${PROX_ACCOUNT_ID}/linkedin/company-details`,
+                  query,
                 ),
               ),
             },
