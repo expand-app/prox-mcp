@@ -572,7 +572,7 @@ const TOOLS = [
   },
   {
     name: "get_linkedin_conversations",
-    description: "Get LinkedIn Conversations",
+    description: "Get LinkedIn Conversations (newest first, paginated)",
     inputSchema: {
       type: "object",
       properties: {
@@ -581,7 +581,21 @@ const TOOLS = [
           description: "The hash id in linkedin, which should start with `ACo`",
         },
         count: { type: "integer", default: 20 },
-        last_activity_at: { type: "integer" },
+        category: {
+          type: "string",
+          enum: ["PRIMARY_INBOX", "SECONDARY_INBOX", "INMAIL", "ARCHIVE", "SPAM"],
+          description:
+            "Inbox tab to fetch. Default PRIMARY_INBOX (Focused); SECONDARY_INBOX is the Other tab.",
+        },
+        next_cursor: {
+          type: "string",
+          description:
+            "Opaque pagination cursor from a previous response's `next_cursor`; fetches the next page.",
+        },
+        last_activity_at: {
+          type: "integer",
+          description: "Deprecated coarse cursor (epoch ms); prefer next_cursor.",
+        },
       },
     },
   },
