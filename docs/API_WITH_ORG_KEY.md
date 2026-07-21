@@ -656,12 +656,30 @@ No parameters required.
 
 #### `GET /v1/accounts/<account_id>/linkedin/conversations` (Get Conversations)
 
+Returns the account's conversations for one inbox tab, **ordered newest-first** by `last_activity_at` (LinkedIn's authoritative order).
+
 **Query Parameters:**
 
 - `hash_id`: string (optional) - Explicit account hash ID (usually inferred).
-- `count`: integer (optional, default: 20)
-- `last_activity_at`: integer (optional) - Timestamp for pagination.
+- `count`: integer (optional, default: 20). A non-integer value returns `invalid_param`.
+- `category`: string (optional, default: `PRIMARY_INBOX`) - Inbox tab; allowed values: `PRIMARY_INBOX` (Focused), `SECONDARY_INBOX` (Other), `INMAIL`, `ARCHIVE`, `SPAM`. Any other value returns `invalid_param`.
+- `next_cursor`: string (optional) - Opaque cursor returned by a previous call's `next_cursor` field. Fetches the next page.
+- `last_activity_at`: integer (optional, **deprecated**) - Coarse epoch-ms cursor; prefer `next_cursor`. Ignored when `next_cursor` is supplied.
 - `return_original`: boolean (optional, default: false) - If true, returns the original LinkedIn response body.
+
+**Response (200 OK):**
+
+```json
+{
+  "conversations": [ /* newest first */ ],
+  "next_cursor": "REVTQ0VORElORy..." | null
+}
+```
+
+- `next_cursor` is `null` when there are no more pages.
+- `400 Bad Request` with `error.code = "invalid_param"` when `count` is not an integer or `category` is not an allowed value.
+- `423 Locked` with `error.code = "account_abs_not_valid"` when the account is not ready.
+- `424 Failed Dependency` with `error.code = "upstream_error"` when LinkedIn returns a non-200.
 
 #### `GET /v1/accounts/<account_id>/linkedin/conversations/search` (Search Conversations by Keywords)
 
